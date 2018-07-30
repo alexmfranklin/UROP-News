@@ -10,6 +10,7 @@ if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
     ssl._create_default_https_context = ssl._create_unverified_context
 
 only_tr_tags = SoupStrainer('tr')
+only_td_tags = SoupStrainer('td', {'colspan': '2'})
 
 sauce = urllib.request.urlopen('http://www.ust.hk/about-hkust/media-relations/press-releases').read()
 soup = bs.BeautifulSoup(sauce, 'html.parser', parse_only=only_tr_tags)
@@ -41,16 +42,34 @@ def collectData():
             if(date != None):
                 dataPart['date'] = date.get_text()
 
+            #Find all the text of the articles
+            textString = ''
+            if(link_title != None):
+                sauce2 = urllib.request.urlopen(dataPart['link']).read()
+                soup2 = bs.BeautifulSoup(sauce2, 'html.parser', parse_only=only_td_tags)
+                text = soup2.findAll('p')
+                for paragraph in text:
+                    textString += paragraph.get_text() + ' '
+                dataPart['text'] = textString
+
+
             #Add the dataPart to the data
             if(dataPart != {} and dataPart['title'] != ''):
                 data.append(dataPart)
 
     return data
 
-#Arrange the data in the format of the dependency graph
-def compileDepenencyData():
-    dependencyData = {}
+def collectAllData():
     data = collectData()
+
+    dependencyData = compileDepenencyData(data)
+    articleData = compileArticleData(data)
+
+    return (dependencyData, articleData)
+
+#Arrange the data in the format of the dependency graph
+def compileDepenencyData(data):
+    dependencyData = {}
 
     #Create list of titles
     titles = []
@@ -73,13 +92,23 @@ def compileDepenencyData():
 
     return dependencyData
 
+def compileArticleData(data):
+    articleData = []
+
+    for d in data:
+        articleData.append(d)
+
+    return articleData
+
 #Write the data to a data file
-def writeData(dependencyData):
+def writeData(dependencyData, articleData):
     with open("dependencyData.json", "w") as f:
          json.dump(dependencyData, f, indent=1)
+    with open("articleData.json", "w") as f:
+         json.dump(articleData, f, indent=1)
 
-writeData(compileDepenencyData())
-
+data = collectData()
+writeData(compileDepenencyData(data), compileArticleData(data))
 
 
 
