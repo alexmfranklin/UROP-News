@@ -66,7 +66,7 @@ d3.chart.dependencyWheel = function(options) {
 
       var fill = function(d) {
         if (d.index === 0) return '#ccc';
-        return "hsl(" + parseInt(((packageNames[d.index][0].charCodeAt() - 97) / 26) * 360, 10) + ",90%,70%)";
+        return '#2659C4';
       };
 
       // Returns an event handler for fading a given chord group.
